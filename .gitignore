@@ -1,0 +1,11 @@
+ragvenv/*
+__pycache__/
+**/__pycache__/
+chroma_db/
+downloads/
+processed/
+.env
+.venv/
+.vscode/
+.gitignore
+.git/

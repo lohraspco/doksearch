@@ -1,0 +1,30 @@
+# Basic requirements for minimal RAG functionality
+# Use this if other requirements files fail
+
+# Essential core packages
+numpy
+pandas
+requests
+python-dotenv
+
+# Document processing
+pypdf2
+python-docx
+
+# Vector database (essential)
+chromadb
+
+# Text processing (essential)
+sentence-transformers
+tiktoken
+
+# Web interface
+streamlit
+
+# OpenAI (optional)
+openai
+
+# LangChain (optional)
+langchain
+langchain-community
+langchain-openai 
