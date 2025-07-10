@@ -9,6 +9,8 @@ using the existing PDF files in the docsJuly directory.
 
 import os
 import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from rag_system import RAGSystem
 import logging
 
