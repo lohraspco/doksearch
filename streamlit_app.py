@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit as sl
 import os
 import tempfile
 from rag_system import RAGSystem
@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Page configuration
-st.set_page_config(
+sl.set_page_config(
     page_title="RAG Document System",
     page_icon="📚",
     layout="wide",
@@ -17,7 +17,7 @@ st.set_page_config(
 )
 
 # Custom CSS
-st.markdown("""
+sl.markdown("""
 <style>
     .main-header {
         font-size: 2.5rem;
@@ -49,55 +49,55 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-@st.cache_resource
+@sl.cache_resource
 def get_rag_system():
     """Initialize and cache the RAG system."""
     return RAGSystem()
 
 def main():
     # Header
-    st.markdown('<h1 class="main-header">📚 RAG Document System</h1>', unsafe_allow_html=True)
+    sl.markdown('<h1 class="main-header">📚 RAG Document System</h1>', unsafe_allow_html=True)
     
     # Initialize RAG system
     rag_system = get_rag_system()
     
     # Sidebar
-    st.sidebar.title("🔧 System Controls")
+    sl.sidebar.title("🔧 System Controls")
     
     # System stats
-    with st.sidebar.expander("📊 System Statistics", expanded=False):
+    with sl.sidebar.expander("📊 System Statistics", expanded=False):
         stats = rag_system.get_system_stats()
-        st.write(f"**Vector Store Documents:** {stats['vector_store'].get('total_documents', 0)}")
-        st.write(f"**OpenAI Available:** {'✅' if stats['openai_available'] else '❌'}")
-        st.write(f"**Supported Formats:** {', '.join(stats['supported_extensions'])}")
+        sl.write(f"**Vector Store Documents:** {stats['vector_store'].get('total_documents', 0)}")
+        sl.write(f"**OpenAI Available:** {'✅' if stats['openai_available'] else '❌'}")
+        sl.write(f"**Supported Formats:** {', '.join(stats['supported_extensions'])}")
     
     # Reset system
-    if st.sidebar.button("🗑️ Reset System"):
-        if st.sidebar.checkbox("Confirm reset"):
+    if sl.sidebar.button("🗑️ Reset System"):
+        if sl.sidebar.checkbox("Confirm reset"):
             success = rag_system.reset_system()
             if success:
-                st.sidebar.success("System reset successfully!")
-                st.rerun()
+                sl.sidebar.success("System reset successfully!")
+                sl.rerun()
             else:
-                st.sidebar.error("Failed to reset system")
+                sl.sidebar.error("Failed to reset system")
     
     # Main content tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["📁 Upload Documents", "🌐 Web Scraping", "❓ Ask Questions", "📖 View Documents"])
+    tab1, tab2, tab3, tab4 = sl.tabs(["📁 Upload Documents", "🌐 Web Scraping", "❓ Ask Questions", "📖 View Documents"])
     
     # Tab 1: Upload Documents
     with tab1:
-        st.header("📁 Upload Documents")
+        sl.header("📁 Upload Documents")
         
         # File upload
-        uploaded_files = st.file_uploader(
+        uploaded_files = sl.file_uploader(
             "Choose PDF or DOC files",
             type=['pdf', 'doc', 'docx'],
             accept_multiple_files=True
         )
         
         if uploaded_files:
-            if st.button("🚀 Process Uploaded Files"):
-                with st.spinner("Processing documents..."):
+            if sl.button("🚀 Process Uploaded Files"):
+                with sl.spinner("Processing documents..."):
                     # Create temporary directory
                     with tempfile.TemporaryDirectory() as temp_dir:
                         # Save uploaded files
@@ -118,92 +118,115 @@ def main():
                             # Add to vector store
                             success = rag_system.vector_store.add_documents(all_chunks)
                             if success:
-                                st.success(f"✅ Successfully processed {len(all_chunks)} chunks from {len(uploaded_files)} files!")
-                                st.rerun()
+                                sl.success(f"✅ Successfully processed {len(all_chunks)} chunks from {len(uploaded_files)} files!")
+                                sl.rerun()
                             else:
-                                st.error("❌ Failed to add documents to vector store")
+                                sl.error("❌ Failed to add documents to vector store")
                         else:
-                            st.warning("⚠️ No text could be extracted from the uploaded files")
+                            sl.warning("⚠️ No text could be extracted from the uploaded files")
         
         # Directory processing
-        st.subheader("Or Process Local Directory")
-        directory_path = st.text_input("Enter directory path:", value="./docsJuly")
+        sl.subheader("Or Process Local Directory")
+        directory_path = sl.text_input("Enter directory path:", value="./docsJuly")
         
-        if st.button("📂 Process Directory"):
+        # Document processing options
+        processing_mode = sl.selectbox(
+            "How to handle existing documents:",
+            options=[
+                ("add", "Add Only (Fail if exists)"),
+                ("upsert", "Overwrite Existing"),
+                ("skip_existing", "Skip Existing")
+            ],
+            format_func=lambda x: x[1],
+            index=2  # Default to skip existing
+        )
+        selected_mode = processing_mode[0]
+        
+        if sl.button("📂 Process Directory"):
             if os.path.exists(directory_path):
-                with st.spinner("Processing directory..."):
-                    success = rag_system.process_local_documents(directory_path)
-                    if success:
-                        st.success("✅ Successfully processed directory!")
-                        st.rerun()
+                with sl.spinner("Processing directory..."):
+                    result = rag_system.process_local_documents(directory_path, mode=selected_mode)
+                    if result['success']:
+                        sl.success("✅ Successfully processed directory!")
+                        
+                        # Show statistics
+                        col1, col2, col3 = sl.columns(3)
+                        with col1:
+                            sl.metric("Chunks Processed", result['total_chunks_processed'])
+                        with col2:
+                            sl.metric("Total in Vector Store", result['vector_store_total'])
+                        with col3:
+                            sl.metric("Processing Mode", selected_mode)
+                        
+                        sl.rerun()
                     else:
-                        st.error("❌ Failed to process directory")
+                        sl.error(f"❌ Failed to process directory: {result.get('error', 'Unknown error')}")
             else:
-                st.error(f"❌ Directory not found: {directory_path}")
+                sl.error(f"❌ Directory not found: {directory_path}")
     
     # Tab 2: Web Scraping
     with tab2:
-        st.header("🌐 Web Scraping")
+        sl.header("🌐 Web Scraping")
         
         # URL input
-        url = st.text_input("Enter website URL:", value="https://emma.msrb.org")
-        max_docs = st.slider("Maximum documents to download:", min_value=1, max_value=50, value=10)
+        url = sl.text_input("Enter website URL:", value="https://emma.msrb.org")
+        max_docs = sl.slider("Maximum documents to download:", min_value=1, max_value=50, value=10)
         
-        if st.button("🕷️ Scrape Documents"):
+        if sl.button("🕷️ Scrape Documents"):
             if url:
-                with st.spinner("Scraping documents..."):
+                with sl.spinner("Scraping documents..."):
                     success = rag_system.scrape_and_process_web_documents(url, max_docs)
                     if success:
-                        st.success("✅ Successfully scraped and processed documents!")
-                        st.rerun()
+                        sl.success("✅ Successfully scraped and processed documents!")
+                        sl.rerun()
                     else:
-                        st.error("❌ Failed to scrape documents")
+                        sl.error("❌ Failed to scrape documents")
             else:
-                st.error("❌ Please enter a URL")
+                sl.error("❌ Please enter a URL")
         
         # Show downloaded files
         downloaded_files = rag_system.web_scraper.get_downloaded_files()
         if downloaded_files:
-            st.subheader("📥 Downloaded Files")
+            sl.subheader("📥 Downloaded Files")
             for file_path in downloaded_files:
-                st.write(f"• {os.path.basename(file_path)}")
+                sl.write(f"• {os.path.basename(file_path)}")
     
     # Tab 3: Ask Questions
     with tab3:
-        st.header("❓ Ask Questions")
+        sl.header("❓ Ask Questions")
         
         # Question input
-        question = st.text_input("Enter your question:")
-        top_k = st.slider("Number of top results:", min_value=1, max_value=20, value=5)
+        question = sl.text_input("Enter your question:")
+        top_k = sl.slider("Number of top results:", min_value=1, max_value=20, value=5)
         
-        if st.button("🔍 Search") and question:
-            with st.spinner("Searching for answers..."):
+        if sl.button("🔍 Search") and question:
+            with sl.spinner("Searching for answers..."):
                 result = rag_system.ask_question(question, top_k)
                 
                 # Display answer
-                st.subheader("💡 Answer")
-                st.write(result['answer'])
+                sl.subheader("💡 Answer")
+                sl.write(result['answer'])
                 
                 # Display confidence
-                col1, col2, col3 = st.columns(3)
+                col1, col2, col3 = sl.columns(3)
                 with col1:
-                    st.metric("Confidence", f"{result['confidence']:.1%}")
+                    sl.metric("Confidence", f"{result['confidence']:.1%}")
                 with col2:
-                    st.metric("Documents Found", result['search_results_count'])
+                    sl.metric("Documents Found", result['search_results_count'])
                 with col3:
-                    st.metric("Results Considered", top_k)
+                    sl.metric("Results Considered", top_k)
                 
                 # Display references
                 if result['references']:
-                    st.subheader("📖 References")
+                    sl.subheader("📖 References")
                     for i, ref in enumerate(result['references'], 1):
-                        with st.expander(f"Reference {i}: {ref['file_name']} (Page {ref['page']})"):
-                            st.write(f"**Similarity:** {ref['similarity_score']:.2%}")
-                            st.write(f"**Folder:** {ref['folder']}")
-                            st.write(f"**Text:** {ref['text']}")
+                        with sl.expander(f"Reference {i}: {ref['file_name']} (Page {ref['page']})"):
+                            sl.write(f"**Similarity:** {ref['similarity_score']:.2%}")
+                            sl.write(f"**Folder:** {ref['folder']}")
+                            sl.write(f"**Text:** {ref['text']}")
         
         # Quick questions
-        st.subheader("💭 Quick Questions")
+        sl.subheader("💭 Quick Questions")
         quick_questions = [
             "What is the main topic of these documents?",
             "What are the key findings?",
@@ -211,44 +234,44 @@ def main():
             "Who are the main parties involved?"
         ]
         
-        cols = st.columns(2)
+        cols = sl.columns(2)
         for i, q in enumerate(quick_questions):
             with cols[i % 2]:
-                if st.button(q, key=f"quick_{i}"):
-                    with st.spinner("Searching..."):
+                if sl.button(q, key=f"quick_{i}"):
+                    with sl.spinner("Searching..."):
                         result = rag_system.ask_question(q, 5)
-                        st.write(f"**Answer:** {result['answer']}")
+                        sl.write(f"**Answer:** {result['answer']}")
     
     # Tab 4: View Documents
     with tab4:
-        st.header("📖 View Documents")
+        sl.header("📖 View Documents")
         
         # Show vector store contents
         stats = rag_system.get_system_stats()
         total_docs = stats['vector_store'].get('total_documents', 0)
         
         if total_docs > 0:
-            st.success(f"📚 Vector store contains {total_docs} document chunks")
+            sl.success(f"📚 Vector store contains {total_docs} document chunks")
             
             # Search within documents
-            st.subheader("🔍 Search Within Documents")
-            search_query = st.text_input("Search for specific content:")
+            sl.subheader("🔍 Search Within Documents")
+            search_query = sl.text_input("Search for specific content:")
             
-            if search_query and st.button("🔍 Search"):
-                with st.spinner("Searching..."):
+            if search_query and sl.button("🔍 Search"):
+                with sl.spinner("Searching..."):
                     results = rag_system.vector_store.search(search_query, 10)
                     
                     if results:
-                        st.write(f"Found {len(results)} relevant chunks:")
+                        sl.write(f"Found {len(results)} relevant chunks:")
                         for i, result in enumerate(results, 1):
-                            with st.expander(f"Result {i}: {result['metadata']['file_name']} (Page {result['metadata']['page']})"):
-                                st.write(f"**Similarity:** {result['similarity_score']:.2%}")
-                                st.write(f"**Folder:** {result['metadata']['folder']}")
-                                st.write(f"**Text:** {result['text']}")
+                            with sl.expander(f"Result {i}: {result['metadata']['file_name']} (Page {result['metadata']['page']})"):
+                                sl.write(f"**Similarity:** {result['similarity_score']:.2%}")
+                                sl.write(f"**Folder:** {result['metadata']['folder']}")
+                                sl.write(f"**Text:** {result['text']}")
                     else:
-                        st.warning("No results found")
+                        sl.warning("No results found")
         else:
-            st.info("📝 No documents in the system yet. Upload some documents or scrape from a website first!")
+            sl.info("📝 No documents in the system yet. Upload some documents or scrape from a website first!")
 
 if __name__ == "__main__":
     main() 

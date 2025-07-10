@@ -6,10 +6,11 @@ import logging
 from datetime import datetime
 import json
 import pandas as pd
+from logging_config import setup_logging, get_logger
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Set up comprehensive logging
+loggers = setup_logging(log_level=logging.INFO, log_file="advanced_chat.log")
+logger = get_logger('advanced_chat')
 
 # Page configuration
 st.set_page_config(
@@ -152,7 +153,10 @@ st.markdown("""
 @st.cache_resource
 def get_rag_system():
     """Initialize and cache the RAG system."""
-    return RAGSystem()
+    logger.info("🔄 Creating RAG system instance (cached)")
+    rag_system = RAGSystem()
+    logger.info("✅ RAG system instance created and cached")
+    return rag_system
 
 def get_confidence_color(confidence):
     """Get color class based on confidence score."""
@@ -184,8 +188,6 @@ def initialize_session_state():
     """Initialize session state variables."""
     if 'chat_history' not in st.session_state:
         st.session_state.chat_history = []
-    if 'documents_processed' not in st.session_state:
-        st.session_state.documents_processed = False
     if 'system_initialized' not in st.session_state:
         st.session_state.system_initialized = False
     if 'conversation_id' not in st.session_state:
@@ -198,6 +200,17 @@ def initialize_session_state():
             'show_references': True,
             'show_confidence': True
         }
+    
+    # Check if documents are already processed by checking vector store
+    if 'documents_processed' not in st.session_state:
+        try:
+            has_docs, doc_count = check_documents_status()
+            st.session_state.documents_processed = has_docs
+            if st.session_state.documents_processed:
+                logger.info(f"Auto-detected {doc_count} existing documents in vector store")
+        except Exception as e:
+            logger.warning(f"Could not check existing documents: {e}")
+            st.session_state.documents_processed = False
 
 def export_conversation():
     """Export conversation to JSON."""
@@ -256,6 +269,25 @@ def show_typing_indicator():
     </div>
     """, unsafe_allow_html=True)
 
+@st.cache_data(ttl=60)  # Cache for 60 seconds
+def check_documents_status():
+    """Check if documents are available in the vector store."""
+    try:
+        from vector_store import VectorStore
+        vs = VectorStore()
+        stats = vs.get_collection_stats()
+        total_docs = stats.get('total_documents', 0)
+        return total_docs > 0, total_docs
+    except Exception as e:
+        logger.error(f"Error checking documents status: {e}")
+        return False, 0
+
+def refresh_documents_status():
+    """Refresh the documents processed status."""
+    has_docs, doc_count = check_documents_status()
+    st.session_state.documents_processed = has_docs
+    return has_docs, doc_count
+
 def main():
     # Initialize session state
     initialize_session_state()
@@ -263,10 +295,14 @@ def main():
     # Header
     st.markdown('<h1 class="main-header">🤖 Advanced RAG Chat Assistant</h1>', unsafe_allow_html=True)
     
-    # Initialize RAG system
-    rag_system = get_rag_system()
+    # Initialize RAG system (cached)
     if not st.session_state.system_initialized:
+        logger.info("🔄 Initializing RAG system for the first time")
+        rag_system = get_rag_system()
         st.session_state.system_initialized = True
+        logger.info("✅ RAG system initialized and marked as ready")
+    else:
+        rag_system = get_rag_system()
     
     # Sidebar for setup and controls
     with st.sidebar:
@@ -313,16 +349,81 @@ def main():
             st.subheader("Or Process Directory")
             directory_path = st.text_input("Directory path:", value="./docsJuly")
             
+            # Document processing options
+            st.subheader("📋 Processing Options")
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                processing_mode = st.selectbox(
+                    "How to handle existing documents:",
+                    options=[
+                        ("add", "Add Only (Fail if exists)"),
+                        ("upsert", "Overwrite Existing"),
+                        ("skip_existing", "Skip Existing")
+                    ],
+                    format_func=lambda x: x[1],
+                    index=2  # Default to skip existing
+                )
+                selected_mode = processing_mode[0]
+            
+            with col2:
+                st.write("**Mode Explanation:**")
+                if selected_mode == "add":
+                    st.info("Will fail if documents already exist")
+                elif selected_mode == "upsert":
+                    st.info("Will overwrite existing documents")
+                else:  # skip_existing
+                    st.info("Will only add new documents")
+            
             if st.button("📂 Process Directory"):
                 if os.path.exists(directory_path):
                     with st.spinner("Processing documents..."):
-                        success = rag_system.process_local_documents(directory_path)
-                        if success:
+                        result = rag_system.process_local_documents(directory_path, mode=selected_mode)
+                        
+                        if result['success']:
                             st.session_state.documents_processed = True
+                            
+                            # Display detailed results
                             st.success(f"✅ Successfully processed documents from {directory_path}")
+                            
+                            # Show statistics
+                            col1, col2, col3 = st.columns(3)
+                            with col1:
+                                st.metric("Chunks Processed", result['total_chunks_processed'])
+                            with col2:
+                                st.metric("Total in Vector Store", result['vector_store_total'])
+                            with col3:
+                                st.metric("Processing Mode", selected_mode)
+                            
+                            # Show existing document info if available
+                            if result.get('existing_info'):
+                                existing_info = result['existing_info']
+                                with st.expander("📊 Document Analysis"):
+                                    col1, col2 = st.columns(2)
+                                    with col1:
+                                        st.write(f"**Existing Files:** {len(existing_info['existing_files'])}")
+                                        st.write(f"**New Files:** {len(existing_info['new_files'])}")
+                                    with col2:
+                                        st.write(f"**Existing Chunks:** {existing_info['existing_chunks']}")
+                                        st.write(f"**New Chunks:** {existing_info['new_chunks']}")
+                                    
+                                    if existing_info['existing_files']:
+                                        st.write("**Existing Files:**")
+                                        for file in existing_info['existing_files'][:5]:  # Show first 5
+                                            st.write(f"• {os.path.basename(file)}")
+                                        if len(existing_info['existing_files']) > 5:
+                                            st.write(f"... and {len(existing_info['existing_files']) - 5} more")
+                                    
+                                    if existing_info['new_files']:
+                                        st.write("**New Files:**")
+                                        for file in existing_info['new_files'][:5]:  # Show first 5
+                                            st.write(f"• {os.path.basename(file)}")
+                                        if len(existing_info['new_files']) > 5:
+                                            st.write(f"... and {len(existing_info['new_files']) - 5} more")
+                            
                             st.rerun()
                         else:
-                            st.error("❌ Failed to process documents")
+                            st.error(f"❌ Failed to process documents: {result.get('error', 'Unknown error')}")
                 else:
                     st.error(f"❌ Directory not found: {directory_path}")
             
@@ -360,9 +461,14 @@ def main():
         # System info
         with st.expander("📊 System Info"):
             stats = rag_system.get_system_stats()
+            
+            # Check current document status
+            has_docs, doc_count = check_documents_status()
+            status_icon = "✅" if has_docs else "❌"
+            
             st.markdown(f"""
             <div class="stats-card">
-                <strong>📄 Documents:</strong> {stats['vector_store'].get('total_documents', 0)}
+                <strong>📄 Documents:</strong> {doc_count} {status_icon}
             </div>
             <div class="stats-card">
                 <strong>🤖 OpenAI:</strong> {'✅' if stats['openai_available'] else '❌'}
@@ -371,6 +477,10 @@ def main():
                 <strong>📁 Formats:</strong> {', '.join(stats['supported_extensions'])}
             </div>
             """, unsafe_allow_html=True)
+            
+            # Add refresh button for system info
+            if st.button("🔄 Refresh System Info", key="refresh_sys_info"):
+                st.rerun()
         
         # Conversation management
         with st.expander("💾 Conversation"):
@@ -409,6 +519,16 @@ def main():
     # Main content area with tabs
     if not st.session_state.documents_processed:
         st.info("📝 Please upload documents or process a directory to start chatting!")
+        
+        # Add a refresh button to check for existing documents
+        if st.button("🔄 Check for Existing Documents"):
+            has_docs, doc_count = refresh_documents_status()
+            if has_docs:
+                st.success(f"✅ Found {doc_count} existing documents! You can now start chatting.")
+                st.rerun()
+            else:
+                st.warning("No existing documents found. Please upload or process documents.")
+        
         st.stop()
     
     # Create tabs
@@ -457,31 +577,36 @@ def main():
         
         # Process question
         if question and (send_button or st.session_state.question_input == question):
-            # Add user message to history
-            st.session_state.chat_history.append({
-                'role': 'user',
-                'content': question,
-                'timestamp': datetime.now().isoformat()
-            })
-            
-            # Show typing indicator
-            with st.container():
-                show_typing_indicator()
-            
-            # Get answer
-            result = rag_system.ask_question(question, st.session_state.chat_settings['top_k'])
-            
-            # Add assistant response to history
-            st.session_state.chat_history.append({
-                'role': 'assistant',
-                'answer': result['answer'],
-                'confidence': result['confidence'],
-                'references': result['references'],
-                'timestamp': datetime.now().isoformat()
-            })
-            
-            # Clear input and rerun to show new message
-            st.rerun()
+            # Check if this question was already processed
+            if not st.session_state.chat_history or st.session_state.chat_history[-1].get('content') != question:
+                # Add user message to history
+                st.session_state.chat_history.append({
+                    'role': 'user',
+                    'content': question,
+                    'timestamp': datetime.now().isoformat()
+                })
+                
+                # Show typing indicator
+                with st.container():
+                    show_typing_indicator()
+                
+                # Get answer
+                result = rag_system.ask_question(question, st.session_state.chat_settings['top_k'])
+                
+                # Add assistant response to history
+                st.session_state.chat_history.append({
+                    'role': 'assistant',
+                    'answer': result['answer'],
+                    'confidence': result['confidence'],
+                    'references': result['references'],
+                    'timestamp': datetime.now().isoformat()
+                })
+                
+                # Clear the question input to prevent infinite loop
+                st.session_state.question_input = ""
+                
+                # Clear input and rerun to show new message
+                st.rerun()
     
     # Documents Tab
     with tab2:
@@ -530,8 +655,14 @@ def main():
                         st.success(f"Found {len(search_results)} relevant documents")
                         
                         for i, result in enumerate(search_results, 1):
-                            with st.expander(f"📄 {result['file_name']} (Page {result['page']}) - Similarity: {result['similarity_score']:.1%}"):
-                                st.write(f"**Folder:** {result['folder']}")
+                            # Get metadata from the result structure
+                            metadata = result.get('metadata', {})
+                            file_name = metadata.get('file_name', 'Unknown')
+                            page = metadata.get('page', 'Unknown')
+                            folder = metadata.get('folder', 'Unknown')
+                            
+                            with st.expander(f"📄 {file_name} (Page {page}) - Similarity: {result['similarity_score']:.1%}"):
+                                st.write(f"**Folder:** {folder}")
                                 st.write(f"**Text:**")
                                 st.text_area(f"Content {i}", result['text'], height=150, key=f"content_{i}")
                     else:
@@ -580,14 +711,23 @@ def main():
             
             # Document processing info
             st.markdown("---")
-            st.subheader("🔄 Reprocess Documents")
+            st.subheader("🔄 Document Management")
             
-            col1, col2 = st.columns(2)
+            col1, col2, col3 = st.columns(3)
             with col1:
-                if st.button("🔄 Refresh Documents"):
-                    st.info("Document refresh functionality can be added here.")
+                if st.button("🔄 Refresh Status"):
+                    has_docs, doc_count = refresh_documents_status()
+                    if has_docs:
+                        st.success(f"✅ Found {doc_count} documents")
+                    else:
+                        st.warning("No documents found")
+                    st.rerun()
             
             with col2:
+                if st.button("📊 Update Stats"):
+                    st.rerun()
+            
+            with col3:
                 if st.button("🗑️ Clear Documents"):
                     if st.checkbox("Confirm clear all documents"):
                         success = rag_system.reset_system()

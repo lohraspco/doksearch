@@ -1,4 +1,5 @@
 import os
+import time
 import logging
 from typing import List, Dict, Optional
 from openai import OpenAI
@@ -7,9 +8,9 @@ from vector_store import VectorStore
 from web_scraper import WebScraper
 from local_llm import LocalLLMManager
 from config import Config
+from logging_config import get_logger
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = get_logger('rag_system')
 
 class RAGSystem:
     def __init__(self):
@@ -45,30 +46,67 @@ class RAGSystem:
         embedding_info = self.vector_store.get_embedding_model_info()
         logger.info(f"  Embeddings: {embedding_info['model']}")
     
-    def process_local_documents(self, directory_path: str) -> bool:
-        """Process documents from a local directory."""
+    def process_local_documents(self, directory_path: str, mode: str = "add") -> Dict:
+        """Process documents from a local directory.
+        
+        Args:
+            directory_path: Path to directory containing documents
+            mode: "add" (fails on duplicates), "upsert" (overwrites duplicates), "skip_existing" (skips duplicates)
+        
+        Returns:
+            Dict with processing results and statistics
+        """
         try:
-            logger.info(f"Processing documents from: {directory_path}")
+            logger.info(f"Processing documents from: {directory_path} with mode: {mode}")
             
             # Process documents
             chunks = self.document_processor.process_directory(directory_path)
             
             if chunks:
-                # Add to vector store
-                success = self.vector_store.add_documents(chunks)
+                # Check existing documents if not in add mode
+                if mode in ["upsert", "skip_existing"]:
+                    existing_info = self.vector_store.check_existing_documents(chunks)
+                    logger.info(f"Document analysis: {existing_info['existing_files']} existing files, {existing_info['new_files']} new files")
+                    logger.info(f"Chunk analysis: {existing_info['existing_chunks']} existing chunks, {existing_info['new_chunks']} new chunks")
+                
+                # Add to vector store with specified mode
+                success = self.vector_store.add_documents(chunks, mode=mode)
+                
                 if success:
-                    logger.info(f"Successfully processed {len(chunks)} chunks from {directory_path}")
-                    return True
+                    # Get updated stats
+                    stats = self.vector_store.get_collection_stats()
+                    logger.info(f"Successfully processed documents from {directory_path}")
+                    logger.info(f"Vector store now contains {stats.get('total_documents', 0)} total chunks")
+                    
+                    return {
+                        'success': True,
+                        'total_chunks_processed': len(chunks),
+                        'vector_store_total': stats.get('total_documents', 0),
+                        'mode': mode,
+                        'existing_info': existing_info if mode in ["upsert", "skip_existing"] else None
+                    }
                 else:
                     logger.error("Failed to add documents to vector store")
-                    return False
+                    return {
+                        'success': False,
+                        'error': 'Failed to add documents to vector store',
+                        'total_chunks_processed': len(chunks)
+                    }
             else:
                 logger.warning(f"No document chunks found in {directory_path}")
-                return False
+                return {
+                    'success': False,
+                    'error': 'No document chunks found',
+                    'total_chunks_processed': 0
+                }
                 
         except Exception as e:
             logger.error(f"Error processing local documents: {e}")
-            return False
+            return {
+                'success': False,
+                'error': str(e),
+                'total_chunks_processed': 0
+            }
     
     def scrape_and_process_web_documents(self, url: str, max_documents: int = 10) -> bool:
         """Scrape documents from web and process them."""
@@ -107,25 +145,40 @@ class RAGSystem:
     
     def ask_question(self, question: str, top_k: int = None) -> Dict:
         """Ask a question and get an answer with references."""
+        start_time = time.time()
+        logger.info(f"Starting question processing: '{question}'")
+        
         try:
             # Search for relevant documents
+            logger.info(f"Searching for relevant documents for question: '{question}'")
             search_results = self.vector_store.search(question, top_k=top_k)
             
+            search_time = time.time() - start_time
+            logger.info(f"Search completed in {search_time:.2f}s, found {len(search_results)} results")
+            
             if not search_results:
+                logger.warning(f"No search results found for question: '{question}'")
                 return {
                     'answer': "I couldn't find any relevant information to answer your question.",
                     'references': [],
-                    'confidence': 0.0
+                    'confidence': 0.0,
+                    'search_results_count': 0
                 }
             
             # Prepare context for LLM
+            logger.info("Preparing context for LLM...")
             context = self._prepare_context(search_results)
             
             # Generate answer using available LLM
+            logger.info("Generating answer...")
             answer = self._generate_answer(question, context, search_results)
             
             # Prepare references
+            logger.info("Preparing references...")
             references = self._prepare_references(search_results)
+            
+            total_time = time.time() - start_time
+            logger.info(f"Question processing completed in {total_time:.2f}s")
             
             return {
                 'answer': answer,
@@ -135,11 +188,14 @@ class RAGSystem:
             }
             
         except Exception as e:
-            logger.error(f"Error answering question: {e}")
+            total_time = time.time() - start_time
+            logger.error(f"Error answering question after {total_time:.2f}s: {e}")
+            logger.error(f"Question: '{question}'")
             return {
                 'answer': f"An error occurred while processing your question: {str(e)}",
                 'references': [],
-                'confidence': 0.0
+                'confidence': 0.0,
+                'search_results_count': 0
             }
     
     def _prepare_context(self, search_results: List[Dict]) -> str:

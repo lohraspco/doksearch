@@ -18,11 +18,15 @@ LOCAL_LLM_MODEL=gemma2:3b
 # Ollama Configuration
 OLLAMA_BASE_URL=http://localhost:11434
 
+# Embedding Model Configuration
+# Primary embedding model used throughout the app
+EMBEDDING_MODEL=all-MiniLM-L6-v2
+
 # Local Embeddings Configuration
 # Set to true to use local embedding models
 USE_LOCAL_EMBEDDINGS=false
 
-# Local Embedding Model
+# Local Embedding Model (used when USE_LOCAL_EMBEDDINGS=true)
 LOCAL_EMBEDDING_MODEL=nomic-embed-text
 
 # Model Loading Settings

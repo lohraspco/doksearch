@@ -22,12 +22,17 @@ class LocalEmbeddingsManager:
     def _initialize_local_embeddings(self):
         """Initialize local embedding model."""
         try:
-            model_name = self.config.LOCAL_EMBEDDING_MODEL
+            # Use the primary embedding model from config
+            model_name = self.config.EMBEDDING_MODEL
             
             logger.info(f"🔄 Loading embedding model: {model_name}")
             
-            # Load the model
-            self.model = SentenceTransformer(model_name, device=self.config.DEVICE_MAP)
+            # Load the model with proper device handling
+            device = self.config.DEVICE_MAP
+            if device == "auto":
+                device = "cpu"  # Fallback to CPU if auto is not supported
+            
+            self.model = SentenceTransformer(model_name, device=device)
             self.model_name = model_name
             
             logger.info(f"✅ Embedding model loaded: {model_name}")
@@ -118,9 +123,10 @@ class NomicEmbeddingsManager(LocalEmbeddingsManager):
     def _initialize_local_embeddings(self):
         """Initialize Nomic embedding model."""
         try:
-            model_name = self.config.LOCAL_EMBEDDING_MODEL
+            # Use the primary embedding model from config
+            model_name = self.config.EMBEDDING_MODEL
             
-            # Handle Nomic model names
+            # Handle Nomic model names if they're specified in the primary model
             if model_name == "nomic-embed-text":
                 # Use the latest Nomic embed text model
                 model_name = "nomic-ai/nomic-embed-text-v1.5"
@@ -129,8 +135,12 @@ class NomicEmbeddingsManager(LocalEmbeddingsManager):
             
             logger.info(f"🔄 Loading Nomic embedding model: {model_name}")
             
-            # Load the model
-            self.model = SentenceTransformer(model_name, device=self.config.DEVICE_MAP)
+            # Load the model with proper device handling
+            device = self.config.DEVICE_MAP
+            if device == "auto":
+                device = "cpu"  # Fallback to CPU if auto is not supported
+            
+            self.model = SentenceTransformer(model_name, device=device)
             self.model_name = model_name
             
             logger.info(f"✅ Nomic embedding model loaded: {model_name}")

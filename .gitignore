@@ -9,3 +9,4 @@ processed/
 .vscode/
 .gitignore
 .git/
+logs/*

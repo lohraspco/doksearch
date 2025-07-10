@@ -11,11 +11,12 @@ class Config:
     
     # Local LLM Configuration (Default to local LLM)
     USE_LOCAL_LLM = os.getenv("USE_LOCAL_LLM", "true").lower() == "true"
-    LOCAL_LLM_MODEL = os.getenv("LOCAL_LLM_MODEL", "gemma2:3b")
+    LOCAL_LLM_MODEL = os.getenv("LOCAL_LLM_MODEL", "gemma3:4b")
     LOCAL_LLM_PROVIDER = os.getenv("LOCAL_LLM_PROVIDER", "ollama")  # ollama, llama.cpp, transformers
     
     # Available Local Models
     AVAILABLE_LOCAL_MODELS = {
+        "gemma3:4b": "Gemma 3 4B (Ollama)",
         "gemma2:3b": "Gemma 2 3B (Ollama)",
         "gemma2:7b": "Gemma 2 7B (Ollama)", 
         "llama3.2:3b": "Llama 3.2 3B (Ollama)",
@@ -58,12 +59,13 @@ class Config:
     DOWNLOADS_DIR = "./downloads"
     PROCESSED_DIR = "./processed"
     
-    # Default Embedding Model (fallback)
-    EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+    # Embedding Model Configuration
+    # This is the primary embedding model used throughout the app
+    EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
     
     # Search Configuration
     TOP_K_RESULTS = 5
-    SIMILARITY_THRESHOLD = 0.7
+    SIMILARITY_THRESHOLD = 0.3  # Lowered from 0.7 to catch more relevant results
     
     # Local LLM Settings
     LOCAL_LLM_TEMPERATURE = 0.3
@@ -77,4 +79,4 @@ class Config:
     # Model Loading Settings
     LOAD_IN_8BIT = os.getenv("LOAD_IN_8BIT", "false").lower() == "true"
     LOAD_IN_4BIT = os.getenv("LOAD_IN_4BIT", "false").lower() == "true"
-    DEVICE_MAP = os.getenv("DEVICE_MAP", "auto")  # auto, cpu, cuda, mps 
+    DEVICE_MAP = os.getenv("DEVICE_MAP", "cpu")  # cpu, cuda, mps (auto causes issues) 

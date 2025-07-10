@@ -1,0 +1,42 @@
+2025-07-09 18:33:08,736 - root - INFO - setup_logging:78 - ================================================================================
+2025-07-09 18:33:08,736 - root - INFO - setup_logging:79 - RAG SYSTEM LOGGING STARTED
+2025-07-09 18:33:08,736 - root - INFO - setup_logging:80 - Log level: DEBUG
+2025-07-09 18:33:08,736 - root - INFO - setup_logging:81 - Log file: logs/test_logging.log
+2025-07-09 18:33:08,737 - root - INFO - setup_logging:82 - ================================================================================
+2025-07-09 18:33:08,737 - test_logging - INFO - test_logging:24 - ✅ This is a test success message
+2025-07-09 18:33:08,737 - test_logging - WARNING - test_logging:25 - ⚠️ This is a test warning message
+2025-07-09 18:33:08,737 - test_logging - ERROR - test_logging:26 - ❌ This is a test error message
+2025-07-09 18:33:08,737 - test_logging - DEBUG - test_logging:27 - 🔍 This is a test debug message
+2025-07-09 18:33:08,737 - test_logging - INFO - test_logging:30 - Testing special characters: áéíóú ñ ç 🎉
+2025-07-09 18:33:08,737 - test_logging - INFO - test_logging:31 - Testing numbers: 123 456 789 📊
+2025-07-09 18:33:08,737 - test_logging - INFO - test_logging:32 - Testing symbols: @#$%^&*() 🚀
+2025-07-09 18:33:13,572 - chromadb.config - DEBUG - start:359 - Starting component System
+2025-07-09 18:33:13,572 - chromadb.config - DEBUG - start:359 - Starting component Posthog
+2025-07-09 18:33:13,614 - vector_store - INFO - _initialize_embedding_model:45 - 🔄 Initializing Nomic embeddings...
+2025-07-09 18:33:13,614 - local_embeddings - INFO - _initialize_local_embeddings:136 - 🔄 Loading Nomic embedding model: all-MiniLM-L6-v2
+2025-07-09 18:33:13,614 - sentence_transformers.SentenceTransformer - INFO - __init__:227 - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-07-09 18:33:13,614 - urllib3.connectionpool - DEBUG - _new_conn:1049 - Starting new HTTPS connection (1): huggingface.co:443
+2025-07-09 18:33:13,817 - urllib3.connectionpool - DEBUG - _make_request:544 - https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+2025-07-09 18:33:13,854 - urllib3.connectionpool - DEBUG - _make_request:544 - https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+2025-07-09 18:33:13,957 - urllib3.connectionpool - DEBUG - _make_request:544 - https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+2025-07-09 18:33:13,993 - urllib3.connectionpool - DEBUG - _make_request:544 - https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+2025-07-09 18:33:14,087 - urllib3.connectionpool - DEBUG - _make_request:544 - https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+2025-07-09 18:33:14,122 - urllib3.connectionpool - DEBUG - _make_request:544 - https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+2025-07-09 18:33:14,214 - urllib3.connectionpool - DEBUG - _make_request:544 - https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md HTTP/1.1" 307 0
+2025-07-09 18:33:14,250 - urllib3.connectionpool - DEBUG - _make_request:544 - https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md HTTP/1.1" 200 0
+2025-07-09 18:33:14,361 - urllib3.connectionpool - DEBUG - _make_request:544 - https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+2025-07-09 18:33:14,398 - urllib3.connectionpool - DEBUG - _make_request:544 - https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+2025-07-09 18:33:14,491 - urllib3.connectionpool - DEBUG - _make_request:544 - https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json HTTP/1.1" 307 0
+2025-07-09 18:33:14,526 - urllib3.connectionpool - DEBUG - _make_request:544 - https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json HTTP/1.1" 200 0
+2025-07-09 18:33:14,619 - urllib3.connectionpool - DEBUG - _make_request:544 - https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json HTTP/1.1" 404 0
+2025-07-09 18:33:14,728 - urllib3.connectionpool - DEBUG - _make_request:544 - https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json HTTP/1.1" 307 0
+2025-07-09 18:33:14,770 - urllib3.connectionpool - DEBUG - _make_request:544 - https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json HTTP/1.1" 200 0
+2025-07-09 18:33:15,450 - urllib3.connectionpool - DEBUG - _make_request:544 - https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json HTTP/1.1" 307 0
+2025-07-09 18:33:15,484 - urllib3.connectionpool - DEBUG - _make_request:544 - https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json HTTP/1.1" 200 0
+2025-07-09 18:33:15,587 - urllib3.connectionpool - DEBUG - _make_request:544 - https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=False&expand=False HTTP/1.1" 404 64
+2025-07-09 18:33:15,701 - urllib3.connectionpool - DEBUG - _make_request:544 - https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json HTTP/1.1" 307 0
+2025-07-09 18:33:15,739 - urllib3.connectionpool - DEBUG - _make_request:544 - https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
+2025-07-09 18:33:15,854 - urllib3.connectionpool - DEBUG - _make_request:544 - https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6863
+2025-07-09 18:33:15,854 - local_embeddings - INFO - _initialize_local_embeddings:146 - ✅ Nomic embedding model loaded: all-MiniLM-L6-v2
+2025-07-09 18:33:15,854 - vector_store - INFO - _initialize_embedding_model:52 - ✅ Local embeddings initialized successfully
+2025-07-09 18:33:15,890 - vector_store - INFO - _get_or_create_collection:77 - Created new collection: documents

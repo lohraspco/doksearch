@@ -221,6 +221,9 @@ USE_LOCAL_LLM=true
 LOCAL_LLM_PROVIDER=ollama
 LOCAL_LLM_MODEL=gemma2:3b
 
+# Embedding Model Configuration
+EMBEDDING_MODEL=all-MiniLM-L6-v2
+
 # Local Embeddings Configuration
 USE_LOCAL_EMBEDDINGS=true
 LOCAL_EMBEDDING_MODEL=nomic-embed-text
@@ -238,6 +241,7 @@ SIMILARITY_THRESHOLD=0.7
 ### Available Local Models
 
 #### LLM Models (via Ollama)
+- `gemma3:4b` - Gemma 3 4B (recommended for most systems)
 - `gemma2:3b` - Gemma 2 3B (recommended for most systems)
 - `gemma2:7b` - Gemma 2 7B (requires more memory)
 - `llama3.2:3b` - Llama 3.2 3B
@@ -348,20 +352,88 @@ docsearch/
 ├── chat_ui.py                # Simple chat interface
 ├── advanced_chat.py          # Advanced chat interface
 ├── streamlit_app.py          # Full dashboard interface
-├── test_system.py            # System testing
+├── tests/                    # Test files directory
+│   ├── __init__.py          # Test package initialization
+│   ├── README.md            # Test documentation
+│   ├── run_tests.py         # Test runner
+│   ├── test_logging.py      # Logging tests
+│   ├── test_search.py       # Search functionality tests
+│   ├── test_search_fixed.py # Fixed search tests
+│   ├── test_system.py       # System integration tests
+│   └── clear_database.py    # Database clearing utility
 ├── setup.py                  # Automated setup script
 ├── requirements.txt          # Python dependencies
 ├── env_example.txt           # Environment variables template
-├── activate_rag.sh           # Environment activation (Unix)
-├── activate_rag.bat          # Environment activation (Windows)
-├── run_rag.sh               # RAG system runner (Unix)
-├── run_rag.bat              # RAG system runner (Windows)
-├── run_chat.sh              # Chat interface runner (Unix)
-├── run_chat.bat             # Chat interface runner (Windows)
-├── run_manager.sh           # Model manager runner (Unix)
-├── run_manager.bat          # Model manager runner (Windows)
-└── README.md                # This file
+├── scripts/                  # Utility scripts (.bat, .sh)
+│   ├── restart_app.bat
+│   ├── run_manager.bat
+│   ├── run_chat.bat
+│   ├── run_rag.bat
+│   ├── activate_rag.bat
+│   ├── deactivate_rag.sh
+│   └── deactivate_rag.bat
+├── README.md                # This file
 ```
+
+## 🧪 Testing
+
+### Running Tests
+
+The project includes a comprehensive test suite in the `tests/` directory.
+
+```bash
+# Run all tests
+python tests/run_tests.py
+
+# Run specific test
+python tests/run_tests.py test_search
+
+# Run individual tests
+python tests/test_logging.py
+python tests/test_search.py
+python tests/test_system.py
+
+# Clear database for fresh start
+python tests/clear_database.py
+```
+
+### Test Structure
+
+- **`tests/run_tests.py`** - Test runner for all tests
+- **`tests/test_logging.py`** - Tests logging and Unicode support
+- **`tests/test_search.py`** - Tests vector store and search
+- **`tests/test_system.py`** - Tests complete RAG system
+- **`tests/clear_database.py`** - Database clearing utility
+
+See `tests/README.md` for detailed testing documentation.
+
+## 🛠️ Scripts
+
+All Windows batch (.bat) and shell (.sh) scripts are now located in the `scripts/` directory.
+
+### Usage Examples
+
+```bash
+# Activate the RAG environment (Windows)
+scripts\activate_rag.bat
+
+# Deactivate the RAG environment (Windows)
+scripts\deactivate_rag.bat
+
+# Deactivate the RAG environment (Linux/Mac)
+scripts/deactivate_rag.sh
+
+# Restart the app (Windows)
+scripts\restart_app.bat
+
+# Run the chat interface (Windows)
+scripts\run_chat.bat
+
+# Run the RAG system (Windows)
+scripts\run_rag.bat
+```
+
+Update any custom automation or documentation to use the new script paths.
 
 ## 🚨 Troubleshooting
 

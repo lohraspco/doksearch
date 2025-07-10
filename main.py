@@ -27,24 +27,34 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def process_local_documents(rag_system, directory):
+def process_local_documents(rag_system, directory, mode="skip_existing"):
     """Process documents from a local directory."""
     print(f"Processing documents from: {directory}")
+    print(f"Processing mode: {mode}")
     
     if not os.path.exists(directory):
         print(f"Error: Directory {directory} does not exist.")
         return False
     
-    success = rag_system.process_local_documents(directory)
+    result = rag_system.process_local_documents(directory, mode=mode)
     
-    if success:
-        stats = rag_system.get_system_stats()
+    if result['success']:
         print(f"✅ Successfully processed documents!")
-        print(f"📊 Vector store now contains {stats['vector_store'].get('total_documents', 0)} documents")
+        print(f"📊 Chunks processed: {result['total_chunks_processed']}")
+        print(f"📊 Vector store total: {result['vector_store_total']}")
+        
+        # Show existing document info if available
+        if result.get('existing_info'):
+            existing_info = result['existing_info']
+            print(f"📊 Document Analysis:")
+            print(f"  Existing files: {len(existing_info['existing_files'])}")
+            print(f"  New files: {len(existing_info['new_files'])}")
+            print(f"  Existing chunks: {existing_info['existing_chunks']}")
+            print(f"  New chunks: {existing_info['new_chunks']}")
     else:
-        print("❌ Failed to process documents")
+        print(f"❌ Failed to process documents: {result.get('error', 'Unknown error')}")
     
-    return success
+    return result['success']
 
 def scrape_web_documents(rag_system, url, max_docs):
     """Scrape and process documents from a website."""
@@ -149,6 +159,7 @@ def main():
     # Process local documents
     process_parser = subparsers.add_parser('process-local', help='Process documents from a local directory')
     process_parser.add_argument('--dir', required=True, help='Directory containing documents')
+    process_parser.add_argument('--mode', choices=['skip_existing', 'upsert', 'add'], default='skip_existing', help='Processing mode: skip_existing (default), upsert (overwrite), add (fail if exists)')
     
     # Scrape web documents
     scrape_parser = subparsers.add_parser('scrape-web', help='Scrape documents from a website')
@@ -181,7 +192,7 @@ def main():
     
     try:
         if args.command == 'process-local':
-            process_local_documents(rag_system, args.dir)
+            process_local_documents(rag_system, args.dir, args.mode)
         
         elif args.command == 'scrape-web':
             scrape_web_documents(rag_system, args.url, args.max_docs)

@@ -280,8 +280,17 @@ def setup_environment():
         shutil.copy(env_example, env_file)
         print(f"✅ Created {env_file} from {env_example}")
         print("   Please edit .env and add your OpenAI API key if needed")
+        print("   The default embedding model is set to: all-MiniLM-L6-v2")
     elif os.path.exists(env_file):
         print(f"✅ {env_file} already exists")
+        # Check if EMBEDDING_MODEL is set
+        try:
+            with open(env_file, 'r') as f:
+                content = f.read()
+                if 'EMBEDDING_MODEL=' not in content:
+                    print("   ⚠️  EMBEDDING_MODEL not found in .env, consider adding it")
+        except:
+            pass
     else:
         print(f"⚠️  {env_example} not found, skipping environment setup")
 

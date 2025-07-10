@@ -128,17 +128,17 @@ def initialize_session_state():
     if 'system_initialized' not in st.session_state:
         st.session_state.system_initialized = False
 
-def process_documents(rag_system, directory_path):
+def process_documents(rag_system, directory_path, mode):
     """Process documents and update session state."""
     with st.spinner("Processing documents..."):
-        success = rag_system.process_local_documents(directory_path)
-        if success:
+        result = rag_system.process_local_documents(directory_path, mode)
+        if result['success']:
             st.session_state.documents_processed = True
             st.success(f"✅ Successfully processed documents from {directory_path}")
-            return True
+            return result
         else:
             st.error("❌ Failed to process documents")
-            return False
+            return result
 
 def display_chat_history():
     """Display the chat history."""
@@ -220,10 +220,38 @@ def main():
             st.subheader("Or Process Directory")
             directory_path = st.text_input("Directory path:", value="./docsJuly")
             
+            # Document processing options
+            processing_mode = st.selectbox(
+                "How to handle existing documents:",
+                options=[
+                    ("add", "Add Only (Fail if exists)"),
+                    ("upsert", "Overwrite Existing"),
+                    ("skip_existing", "Skip Existing")
+                ],
+                format_func=lambda x: x[1],
+                index=2  # Default to skip existing
+            )
+            selected_mode = processing_mode[0]
+            
             if st.button("📂 Process Directory"):
                 if os.path.exists(directory_path):
-                    process_documents(rag_system, directory_path)
-                    st.rerun()
+                    result = process_documents(rag_system, directory_path, selected_mode)
+                    if result['success']:
+                        st.session_state.documents_processed = True
+                        st.success(f"✅ Successfully processed documents from {directory_path}")
+                        
+                        # Show statistics
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric("Chunks Processed", result['total_chunks_processed'])
+                        with col2:
+                            st.metric("Total in Vector Store", result['vector_store_total'])
+                        with col3:
+                            st.metric("Processing Mode", selected_mode)
+                        
+                        st.rerun()
+                    else:
+                        st.error(f"❌ Failed to process documents: {result.get('error', 'Unknown error')}")
                 else:
                     st.error(f"❌ Directory not found: {directory_path}")
             
@@ -316,28 +344,33 @@ def main():
     
     # Process question
     if question:
-        # Add user message to history
-        st.session_state.chat_history.append({
-            'role': 'user',
-            'content': question,
-            'timestamp': datetime.now().isoformat()
-        })
-        
-        # Get answer
-        with st.spinner("🤔 Thinking..."):
-            result = rag_system.ask_question(question, top_k)
-        
-        # Add assistant response to history
-        st.session_state.chat_history.append({
-            'role': 'assistant',
-            'answer': result['answer'],
-            'confidence': result['confidence'],
-            'references': result['references'],
-            'timestamp': datetime.now().isoformat()
-        })
-        
-        # Clear input and rerun to show new message
-        st.rerun()
+        # Check if this question was already processed to prevent loops
+        if not st.session_state.chat_history or st.session_state.chat_history[-1].get('content') != question:
+            # Add user message to history
+            st.session_state.chat_history.append({
+                'role': 'user',
+                'content': question,
+                'timestamp': datetime.now().isoformat()
+            })
+            
+            # Get answer
+            with st.spinner("🤔 Thinking..."):
+                result = rag_system.ask_question(question, top_k)
+            
+            # Add assistant response to history
+            st.session_state.chat_history.append({
+                'role': 'assistant',
+                'answer': result['answer'],
+                'confidence': result['confidence'],
+                'references': result['references'],
+                'timestamp': datetime.now().isoformat()
+            })
+            
+            # Clear the question input to prevent infinite loop
+            st.session_state.question_input = ""
+            
+            # Clear input and rerun to show new message
+            st.rerun()
 
 if __name__ == "__main__":
     main() 
