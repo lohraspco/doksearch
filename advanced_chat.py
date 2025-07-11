@@ -188,29 +188,31 @@ def initialize_session_state():
     """Initialize session state variables."""
     if 'chat_history' not in st.session_state:
         st.session_state.chat_history = []
+    
+    if 'conversation_id' not in st.session_state:
+        # Generate a unique conversation ID
+        st.session_state.conversation_id = f"conv_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    
+    if 'documents_processed' not in st.session_state:
+        # Auto-detect if documents are already processed
+        has_docs, doc_count = check_documents_status()
+        st.session_state.documents_processed = has_docs
+    
     if 'system_initialized' not in st.session_state:
         st.session_state.system_initialized = False
-    if 'conversation_id' not in st.session_state:
-        st.session_state.conversation_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    if 'question_input' not in st.session_state:
+        st.session_state.question_input = ""
+    
+    if 'last_processed_question' not in st.session_state:
+        st.session_state.last_processed_question = ""
+    
     if 'chat_settings' not in st.session_state:
         st.session_state.chat_settings = {
             'top_k': 5,
-            'temperature': 0.3,
-            'max_tokens': 500,
             'show_references': True,
             'show_confidence': True
         }
-    
-    # Check if documents are already processed by checking vector store
-    if 'documents_processed' not in st.session_state:
-        try:
-            has_docs, doc_count = check_documents_status()
-            st.session_state.documents_processed = has_docs
-            if st.session_state.documents_processed:
-                logger.info(f"Auto-detected {doc_count} existing documents in vector store")
-        except Exception as e:
-            logger.warning(f"Could not check existing documents: {e}")
-            st.session_state.documents_processed = False
 
 def export_conversation():
     """Export conversation to JSON."""
@@ -576,8 +578,18 @@ def main():
                     st.rerun()
         
         # Process question
-        if question and (send_button or st.session_state.question_input == question):
-            # Check if this question was already processed
+        should_process = False
+        
+        if question and send_button:
+            # Direct button click - always process
+            should_process = True
+        elif question and st.session_state.question_input == question:
+            # Quick question button or form submission - check if it's different from last processed
+            if question != st.session_state.last_processed_question:
+                should_process = True
+        
+        if should_process:
+            # Check if this exact question was already the last one processed
             if not st.session_state.chat_history or st.session_state.chat_history[-1].get('content') != question:
                 # Add user message to history
                 st.session_state.chat_history.append({
@@ -602,8 +614,8 @@ def main():
                     'timestamp': datetime.now().isoformat()
                 })
                 
-                # Clear the question input to prevent infinite loop
-                st.session_state.question_input = ""
+                # Track the last processed question to prevent loops
+                st.session_state.last_processed_question = question
                 
                 # Clear input and rerun to show new message
                 st.rerun()

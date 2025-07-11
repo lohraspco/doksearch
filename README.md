@@ -123,54 +123,71 @@ If you prefer manual setup:
 
 ## 🚀 Quick Start
 
-### 1. Configure Local Models (Optional)
+### 1. Setup
+
+Run the automated setup script:
 
 ```bash
-# Run the model manager
-python model_manager.py
-
-# Or use the convenient script
-./run_manager.sh  # macOS/Linux
-run_manager.bat   # Windows
+python setup.py
 ```
 
-### 2. Process Local Documents
+This will:
+- Create a virtual environment
+- Install all dependencies
+- Set up configuration files
+- Create necessary directories
+
+### 2. Configure Environment
+
+Copy the example environment file and configure your settings:
+
+```bash
+# Copy the example file
+cp env_example.txt .env
+
+# Edit with your preferred settings
+# Key settings:
+# - OPENAI_API_KEY (optional, for OpenAI models)
+# - USE_LOCAL_LLM=true (to use local models via Ollama)
+# - EMBEDDING_MODEL=all-MiniLM-L6-v2 (embedding model to use)
+```
+
+### 3. Process Documents
 
 ```bash
 # Process documents from your docsJuly folder
-python main.py process-local --dir ./docsJuly
+python main.py process-local --dir ./docsJuly --mode skip_existing
 
 # Or use the convenient script
-./run_rag.sh process-local --dir ./docsJuly  # macOS/Linux
-run_rag.bat process-local --dir ./docsJuly   # Windows
+./scripts/run_rag.bat process-local --dir ./docsJuly   # Windows
 ```
 
-### 3. Scrape Documents from Web
+### 4. Scrape Documents from Web
 
 ```bash
 # Scrape documents from EMMA MSRB
 python main.py scrape-web --url https://emma.msrb.org --max-docs 10
 ```
 
-### 4. Ask Questions
+### 5. Ask Questions
 
 ```bash
 # Ask a question about your documents
 python main.py ask --question "What is the main topic of these documents?"
 ```
 
-### 5. Launch Chat Interface
+### 6. Launch Chat Interface
 
 ```bash
 # Launch the advanced chat interface
 streamlit run advanced_chat.py
 
-# Or use the convenient script
-./run_chat.sh  # macOS/Linux
-run_chat.bat   # Windows
+# Or use the convenient scripts
+./scripts/run_chat.bat   # Windows (from scripts folder)
+start_chat.bat          # Windows (simple launcher in root)
 ```
 
-### 6. Interactive Mode
+### 7. Interactive Mode
 
 ```bash
 # Run in interactive mode for multiple questions
@@ -198,13 +215,6 @@ python main.py stats
 # Reset the system
 python main.py reset
 ```
-
-### Web Interface
-
-1. **Upload Documents**: Use the file uploader or specify a directory path
-2. **Web Scraping**: Enter a URL and set the maximum number of documents
-3. **Ask Questions**: Type questions and get answers with references
-4. **View Documents**: Browse and search through processed documents
 
 ## 🔧 Configuration
 
@@ -334,45 +344,42 @@ SIMILARITY_THRESHOLD=0.7
 
 ```
 docsearch/
-├── venv/                      # Virtual environment (created by setup)
+├── ragvenv/                   # Virtual environment (created by setup)
 ├── docsJuly/                  # Your document directory
 │   ├── document1.pdf
 │   └── document2.pdf
 ├── downloads/                 # Web-scraped documents
 ├── chroma_db/                 # Vector database
+├── logs/                      # System logs
+├── scripts/                   # Utility scripts
+│   ├── run_chat.bat          # Launch chat interface
+│   ├── run_rag.bat           # Run main commands
+│   ├── run_manager.bat       # Launch model manager
+│   └── activate_rag.bat      # Activate environment
+├── tests/                     # Test files directory
+│   ├── __init__.py           # Test package initialization
+│   ├── README.md             # Test documentation
+│   ├── run_tests.py          # Test runner
+│   ├── test_logging.py       # Logging tests
+│   ├── test_search.py        # Search functionality tests
+│   ├── test_system.py        # System integration tests
+│   ├── test_ui_loop_fix.py   # UI loop fix tests
+│   └── test_document_processing_modes.py # Document processing tests
 ├── config.py                  # Configuration settings
 ├── document_processor.py      # PDF/DOC processing
 ├── web_scraper.py            # Web scraping functionality
 ├── vector_store.py           # Vector database operations
 ├── local_llm.py              # Local LLM management
 ├── local_embeddings.py       # Local embeddings management
+├── logging_config.py         # Logging configuration
 ├── rag_system.py             # Main RAG orchestration
 ├── model_manager.py          # Model configuration interface
 ├── main.py                   # Command-line interface
-├── chat_ui.py                # Simple chat interface
-├── advanced_chat.py          # Advanced chat interface
-├── streamlit_app.py          # Full dashboard interface
-├── tests/                    # Test files directory
-│   ├── __init__.py          # Test package initialization
-│   ├── README.md            # Test documentation
-│   ├── run_tests.py         # Test runner
-│   ├── test_logging.py      # Logging tests
-│   ├── test_search.py       # Search functionality tests
-│   ├── test_search_fixed.py # Fixed search tests
-│   ├── test_system.py       # System integration tests
-│   └── clear_database.py    # Database clearing utility
+├── advanced_chat.py          # Advanced chat interface (main UI)
 ├── setup.py                  # Automated setup script
 ├── requirements.txt          # Python dependencies
-├── env_example.txt           # Environment variables template
-├── scripts/                  # Utility scripts (.bat, .sh)
-│   ├── restart_app.bat
-│   ├── run_manager.bat
-│   ├── run_chat.bat
-│   ├── run_rag.bat
-│   ├── activate_rag.bat
-│   ├── deactivate_rag.sh
-│   └── deactivate_rag.bat
-├── README.md                # This file
+├── env_example.txt           # Environment configuration example
+└── README.md                 # This file
 ```
 
 ## 🧪 Testing
@@ -517,3 +524,49 @@ For questions and support:
 ---
 
 **Happy Document Searching! 📚🔍** 
+
+## 🖥️ User Interfaces
+
+### Advanced Chat Interface (Recommended)
+
+The main interface for interacting with your documents:
+
+```bash
+streamlit run advanced_chat.py
+# Or: ./scripts/run_chat.bat
+```
+
+**Features:**
+- 💬 **Interactive Chat**: Natural conversation with your documents
+- 📁 **Document Management**: Upload files or process directories with options:
+  - **Skip Existing**: Only process new documents (recommended)
+  - **Overwrite**: Replace existing documents
+  - **Add Only**: Fail if documents already exist
+- 🔍 **Document Search**: Browse and search processed documents
+- 📊 **Analytics**: View document statistics and processing info
+- ⚙️ **Settings**: Configure search parameters and display options
+- 📥 **Export**: Save conversations and references
+
+### Command Line Interface
+
+For automation and scripting:
+
+```bash
+# Process documents with different modes
+python main.py process-local --dir ./docsJuly --mode skip_existing
+python main.py process-local --dir ./docsJuly --mode upsert
+python main.py process-local --dir ./docsJuly --mode add
+
+# Web scraping
+python main.py scrape-web --url https://emma.msrb.org --max-docs 15
+
+# Ask questions
+python main.py ask --question "What are the key findings?" --top-k 10
+
+# Interactive mode
+python main.py interactive
+
+# System management
+python main.py stats
+python main.py reset
+``` 

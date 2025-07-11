@@ -29,7 +29,7 @@ class Config:
     
     # Embedding Configuration
     USE_LOCAL_EMBEDDINGS = os.getenv("USE_LOCAL_EMBEDDINGS", "false").lower() == "true"
-    LOCAL_EMBEDDING_MODEL = os.getenv("LOCAL_EMBEDDING_MODEL", "nomic-embed-text")
+    LOCAL_EMBEDDING_MODEL = os.getenv("LOCAL_EMBEDDING_MODEL", "all-MiniLM-L6-v2")
     
     # Available Local Embedding Models
     AVAILABLE_EMBEDDING_MODELS = {
@@ -65,7 +65,7 @@ class Config:
     
     # Search Configuration
     TOP_K_RESULTS = 5
-    SIMILARITY_THRESHOLD = 0.3  # Lowered from 0.7 to catch more relevant results
+    SIMILARITY_THRESHOLD = 0.2  # Lowered from 0.3 to catch more edge cases and exact matches
     
     # Local LLM Settings
     LOCAL_LLM_TEMPERATURE = 0.3

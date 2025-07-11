@@ -10,3 +10,7 @@ processed/
 .gitignore
 .git/
 logs/*
+doksearch/docsJuly
+doksearch/vector_db/
+doksearch/docsJulySmall/
+doksearch/logs

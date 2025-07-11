@@ -9,6 +9,7 @@ from web_scraper import WebScraper
 from local_llm import LocalLLMManager
 from config import Config
 from logging_config import get_logger
+from query_enhancer import query_enhancer
 
 logger = get_logger('rag_system')
 
@@ -143,15 +144,26 @@ class RAGSystem:
             logger.error(f"Error scraping and processing web documents: {e}")
             return False
     
-    def ask_question(self, question: str, top_k: int = None) -> Dict:
+    def ask_question(self, question: str, top_k: int = None, use_enhanced_search: bool = True) -> Dict:
         """Ask a question and get an answer with references."""
         start_time = time.time()
         logger.info(f"Starting question processing: '{question}'")
         
         try:
-            # Search for relevant documents
+            # Search for relevant documents with enhancement
             logger.info(f"Searching for relevant documents for question: '{question}'")
-            search_results = self.vector_store.search(question, top_k=top_k)
+            
+            if use_enhanced_search:
+                # Use enhanced search with query variations
+                search_results = query_enhancer.get_best_matches(
+                    question, 
+                    lambda q: self.vector_store.search(q, top_k=top_k),
+                    max_variants=3
+                )
+                logger.info(f"Enhanced search completed, found {len(search_results)} total results")
+            else:
+                # Use traditional search
+                search_results = self.vector_store.search(question, top_k=top_k)
             
             search_time = time.time() - start_time
             logger.info(f"Search completed in {search_time:.2f}s, found {len(search_results)} results")
@@ -159,7 +171,7 @@ class RAGSystem:
             if not search_results:
                 logger.warning(f"No search results found for question: '{question}'")
                 return {
-                    'answer': "I couldn't find any relevant information to answer your question.",
+                    'answer': "I couldn't find any relevant information to answer your question. Try rephrasing your question or using different terms.",
                     'references': [],
                     'confidence': 0.0,
                     'search_results_count': 0
@@ -413,4 +425,39 @@ Answer:"""
         else:
             results['messages'].append("⚠️ Local embeddings not enabled")
         
-        return results 
+        return results
+    
+    def test_query_enhancement(self, test_query: str = "use of proceed") -> Dict:
+        """Test the query enhancement functionality."""
+        logger.info(f"Testing query enhancement for: '{test_query}'")
+        
+        try:
+            # Test basic search
+            basic_results = self.vector_store.search(test_query, top_k=5)
+            
+            # Test enhanced search
+            enhanced_results = query_enhancer.get_best_matches(
+                test_query,
+                lambda q: self.vector_store.search(q, top_k=5),
+                max_variants=5
+            )
+            
+            # Get query variants
+            query_variants = query_enhancer.enhance_query(test_query)
+            
+            return {
+                'original_query': test_query,
+                'query_variants': query_variants,
+                'basic_results_count': len(basic_results),
+                'enhanced_results_count': len(enhanced_results),
+                'basic_results': basic_results[:3],  # Top 3 for comparison
+                'enhanced_results': enhanced_results[:3],  # Top 3 for comparison
+                'improvement': len(enhanced_results) - len(basic_results)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error testing query enhancement: {e}")
+            return {
+                'error': str(e),
+                'original_query': test_query
+            } 

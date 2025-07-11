@@ -1,0 +1,38 @@
+# Core LangChain dependencies
+langchain==0.1.0
+langchain-community==0.0.10
+langchain-ollama==0.1.0
+
+# PDF processing
+pypdf==3.17.4
+pymupdf==1.23.21
+
+# Vector storage and embeddings
+faiss-cpu==1.7.4
+sentence-transformers==2.2.2
+
+# BM25 implementation
+rank-bm25==0.2.2
+
+# Text processing
+nltk==3.8.1
+spacy==3.7.2
+
+# Utilities - Pin numpy to < 2.0 for compatibility
+numpy>=1.24.3,<2.0.0
+pandas>=2.1.4,<2.3.0
+tqdm==4.66.1
+
+# Optional: For better text chunking
+tiktoken==0.5.2
+
+# Environment management
+python-dotenv==1.0.0
+
+# Web UI dependencies
+streamlit>=1.29.0,<1.40.0
+streamlit-option-menu==0.3.6
+streamlit-extras==0.3.5
+
+# Additional UI components
+watchdog>=3.0.0,<4.0.0 
